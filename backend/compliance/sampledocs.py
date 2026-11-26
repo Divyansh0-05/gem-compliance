@@ -62,7 +62,8 @@ NON_COMPLIANT = {
     "06_experience_certificate.pdf": ("Experience Certificate", [
         "Issued by: Local Traders Association", "We know this company since 2020."]),
     "07_signed_declaration.pdf": ("Declaration by Bidder", [
-        "We declare that all information furnished in this bid is true and correct.", "We accept all terms and conditions."]),
+        "We declare that all information furnished in this bid is true and correct.", "We accept all terms and conditions.",
+        "Bidder PAN: WXYZP9999K"]),
 }
 
 

@@ -24,7 +24,8 @@ export interface ResultRow {
   reason: string; fix_suggestion: string; source_document_name: string; original_status: string
   overridden_by_name: string; override_remark: string
 }
-export interface Report { id: number; bid: number; score: number; overall_status: Overall; summary: string; generated_at: string; results: ResultRow[] }
+export interface ConsistencyFinding { rule: string; message: string; documents: string[] }
+export interface Report { id: number; bid: number; score: number; overall_status: Overall; summary: string; consistency_findings?: ConsistencyFinding[]; generated_at: string; results: ResultRow[] }
 export interface BidRow {
   id: number; tender_id: number; tender_no: string; tender_title: string; bidder: string; company: string
   status: 'DRAFT' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED' | 'ACCEPTED'; submitted_at: string

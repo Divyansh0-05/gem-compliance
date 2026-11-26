@@ -32,4 +32,4 @@ class ComplianceReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ComplianceReport
-        fields = ("id", "bid", "score", "overall_status", "summary", "generated_at", "results")
+        fields = ("id", "bid", "score", "overall_status", "summary", "consistency_findings", "generated_at", "results")

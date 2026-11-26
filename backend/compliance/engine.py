@@ -337,6 +337,57 @@ def evaluate_item(item, docs, tender):
     return (*best[0], best[1])
 
 
+def check_consistency(bid):
+    """Cross-document consistency check for GSTIN and PAN across all bid documents.
+
+    Rule A: characters 3-12 of every GSTIN must equal every PAN found.
+    Rule B: if two different PANs or two different GSTINs appear across documents, flag it.
+    Returns a list of dicts: {"rule": str, "message": str, "documents": list[str]}
+    """
+    gstin_docs = defaultdict(set)
+    pan_docs = defaultdict(set)
+
+    for doc in bid.documents.all():
+        text = (doc.extracted_text or "").upper()
+        doc_name = os.path.basename(doc.file.name) if doc.file else (
+            doc.checklist_item.name if doc.checklist_item else f"Doc #{doc.id}"
+        )
+        for g in set(re.findall(PATTERNS["GSTIN"], text)):
+            gstin_docs[g].add(doc_name)
+        for p in set(re.findall(PATTERNS["PAN"], text)):
+            pan_docs[p].add(doc_name)
+
+    findings = []
+
+    # Rule B: Multiple different PANs or GSTINs across documents
+    if len(gstin_docs) > 1:
+        findings.append({
+            "rule": "RULE_B",
+            "message": f"Multiple different GSTINs found across documents: {', '.join(sorted(gstin_docs.keys()))}.",
+            "documents": sorted({d for docs in gstin_docs.values() for d in docs}),
+        })
+
+    if len(pan_docs) > 1:
+        findings.append({
+            "rule": "RULE_B",
+            "message": f"Multiple different PANs found across documents: {', '.join(sorted(pan_docs.keys()))}.",
+            "documents": sorted({d for docs in pan_docs.values() for d in docs}),
+        })
+
+    # Rule A: Characters 3-12 of every GSTIN must match every PAN found
+    for gstin, g_docs in gstin_docs.items():
+        gstin_pan = gstin[2:12]
+        for pan, p_docs in pan_docs.items():
+            if gstin_pan != pan:
+                findings.append({
+                    "rule": "RULE_A",
+                    "message": f"PAN in GSTIN ({gstin_pan} from {gstin}) does not match PAN ({pan}) found in documents.",
+                    "documents": sorted(list(g_docs | p_docs)),
+                })
+
+    return findings
+
+
 def recompute_report(report):
     """Recalculate score/verdict/summary from the current results (also used after manual overrides)."""
     results = list(report.results.select_related("checklist_item"))
@@ -345,10 +396,11 @@ def recompute_report(report):
     score = round(100 * earned / total, 1)
     mandatory_fail = [r.checklist_item.name for r in results if r.status == FAIL and r.checklist_item.is_mandatory]
     n_fail = sum(r.status == FAIL for r in results)
+    has_mismatch = bool(getattr(report, "consistency_findings", None))
     if mandatory_fail:
         overall = "NON_COMPLIANT"
     elif score >= 85 and n_fail == 0:
-        overall = "COMPLIANT"
+        overall = "PARTIALLY_COMPLIANT" if has_mismatch else "COMPLIANT"
     elif score >= 50:
         overall = "PARTIALLY_COMPLIANT"
     else:
@@ -358,6 +410,8 @@ def recompute_report(report):
     summary = f"{n_pass} of {len(results)} checks passed, {n_rev} need review, {n_fail} failed."
     if mandatory_fail:
         summary += " Mandatory requirements failed: " + ", ".join(mandatory_fail) + "."
+    if has_mismatch:
+        summary += f" Cross-document consistency issues detected ({len(report.consistency_findings)} mismatch{'es' if len(report.consistency_findings) > 1 else ''})."
     report.summary = summary
     report.save()
     return report
@@ -385,6 +439,7 @@ def run_compliance(bid):
             evidence_snippet=evidence, reason=reason, source_document=source,
             fix_suggestion=build_fix(item, status, has_doc=bool(docs)),
         )
+    report.consistency_findings = check_consistency(bid)
     recompute_report(report)
     bid.status = "VERIFIED"
     bid.save(update_fields=["status"])

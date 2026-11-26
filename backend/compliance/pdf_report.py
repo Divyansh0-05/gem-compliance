@@ -37,7 +37,25 @@ def build_report_pdf(bid):
 
     label, color = VERDICT.get(report.overall_status, ("-", "#334155"))
     story.append(Paragraph(f'<font size="14" color="{color}"><b>{label}</b></font> &nbsp; <font size="12">Score: <b>{report.score:.1f}/100</b></font>', ss["BodyText"]))
-    story += [Spacer(1, 2 * mm), Paragraph(report.summary, ss["BodyText"]), Spacer(1, 5 * mm)]
+    story += [Spacer(1, 2 * mm), Paragraph(report.summary, ss["BodyText"]), Spacer(1, 3 * mm)]
+
+    findings = getattr(report, "consistency_findings", None) or []
+    if findings:
+        consist_color = "#b45309"
+        items_html = "<br/>".join(
+            f"• <b>{f.get('rule', 'RULE')}:</b> {f.get('message', '')}" +
+            (f" <i>(Documents: {', '.join(f.get('documents', []))})</i>" if f.get("documents") else "")
+            for f in findings
+        )
+        story += [
+            Paragraph(f'<font color="{consist_color}"><b>Cross-document consistency warnings:</b><br/>{items_html}</font>', small),
+            Spacer(1, 4 * mm),
+        ]
+    else:
+        story += [
+            Paragraph('<font color="#15803d"><b>Cross-document consistency:</b> All identifiers match across documents (GSTIN / PAN consistent).</font>', small),
+            Spacer(1, 4 * mm),
+        ]
 
     rows = [["#", "Requirement", "Status", "Conf.", "Reason / evidence"]]
     for i, r in enumerate(report.results.select_related("checklist_item", "overridden_by"), 1):

@@ -95,6 +95,33 @@ class RunComplianceTests(TestCase):
         self.assertEqual(r.overall_status, "PARTIALLY_COMPLIANT")
         self.assertIn("No document uploaded", r.results.get(checklist_item=self.i2).reason)
 
+    def test_consistency_match(self):
+        r = engine.run_compliance(self._bid("GSTIN 03ABCDE1234F1Z5", "PAN ABCDE1234F"))
+        self.assertEqual(r.consistency_findings, [])
+        self.assertEqual(r.overall_status, "COMPLIANT")
+        self.assertEqual(r.score, 100.0)
+
+    def test_consistency_pan_mismatch(self):
+        r = engine.run_compliance(self._bid("GSTIN 03ABCDE1234F1Z5", "PAN XYZPA9876Q"))
+        self.assertEqual(r.score, 100.0)
+        self.assertEqual(r.overall_status, "PARTIALLY_COMPLIANT")
+        self.assertTrue(len(r.consistency_findings) > 0)
+        self.assertEqual(r.consistency_findings[0]["rule"], "RULE_A")
+        # Ensure recompute_report preserves capping at PARTIALLY_COMPLIANT
+        engine.recompute_report(r)
+        self.assertEqual(r.overall_status, "PARTIALLY_COMPLIANT")
+
+    def test_consistency_no_identifiers_found(self):
+        tender = Tender.objects.create(title="T2", tender_no="GEM/2", bid_end_date=date.today() + timedelta(days=10),
+                                       status="OPEN", created_by=self.buyer)
+        it = ChecklistItem.objects.create(tender=tender, name="Doc", check_type="DOC_PRESENT", weight=10)
+        bid = Bid.objects.create(tender=tender, bidder=self.bidder)
+        BidDocument.objects.create(bid=bid, checklist_item=it, file="doc.pdf", extracted_text="This is a readable document with no tax ids.")
+        r = engine.run_compliance(bid)
+        self.assertEqual(r.consistency_findings, [])
+        self.assertEqual(r.overall_status, "COMPLIANT")
+        self.assertEqual(r.score, 100.0)
+
 
 class ApiFlowTests(TestCase):
     def setUp(self):

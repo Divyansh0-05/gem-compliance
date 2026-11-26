@@ -15,6 +15,7 @@ class ComplianceReport(models.Model):
     score = models.FloatField(default=0)
     overall_status = models.CharField(max_length=20, choices=Overall.choices, default=Overall.NON_COMPLIANT)
     summary = models.TextField(blank=True)
+    consistency_findings = models.JSONField(default=list, blank=True)
     generated_at = models.DateTimeField(auto_now=True)
 
 

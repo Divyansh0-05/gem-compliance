@@ -123,6 +123,50 @@ export default function BidReport() {
             </div>
           </div>
 
+          {(() => {
+            const findings = rep.consistency_findings || []
+            const hasMismatches = findings.length > 0
+            return (
+              <div className={`fade-up mb-6 rounded-2xl border p-5 ${hasMismatches ? 'border-amber-200 bg-amber-50/70' : 'border-green-200 bg-green-50/70'}`}>
+                <div className="flex items-start gap-3">
+                  {hasMismatches ? (
+                    <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                  ) : (
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className={`font-semibold ${hasMismatches ? 'text-amber-900' : 'text-green-900'}`}>
+                        Cross-document consistency
+                      </h3>
+                      <Badge tone={hasMismatches ? 'amber' : 'green'}>
+                        {hasMismatches ? `${findings.length} mismatch${findings.length > 1 ? 'es' : ''}` : 'All identifiers match'}
+                      </Badge>
+                    </div>
+                    {hasMismatches ? (
+                      <div className="mt-3 space-y-2 text-sm text-amber-900">
+                        {findings.map((f, idx) => (
+                          <div key={idx} className="rounded-xl border border-amber-200 bg-white/90 p-3 shadow-xs">
+                            <p className="font-medium text-slate-800">{f.message}</p>
+                            {f.documents && f.documents.length > 0 && (
+                              <p className="mt-1 text-xs text-slate-500">
+                                <span className="font-semibold text-slate-700">Documents:</span> {f.documents.join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-xs text-green-800">
+                        All identifiers match across uploaded documents (GSTIN and PAN verified).
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
           <div className="card overflow-hidden">
             <div className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Checklist results</h2><p className="text-xs text-slate-500">Click a row for evidence, confidence and how to fix it.</p></div>
             <ul>{rep.results.map((r) => <ResultItem key={r.id} r={r} canOverride={reviewer} onOverride={(x) => { setOv(x); setOvStatus(x.status); setRemark('') }} />)}</ul>
