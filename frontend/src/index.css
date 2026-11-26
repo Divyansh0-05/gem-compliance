@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+  input, select, textarea { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20; }
+  input[type='checkbox'] { @apply h-4 w-4 w-auto rounded border-slate-300 text-brand-600 shadow-none; }
+  label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500; }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-brand-500/40 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-brand-700 text-white shadow-sm hover:bg-brand-800; }
+  .btn-secondary { @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .btn-success { @apply btn bg-green-600 text-white hover:bg-green-700; }
+  .card { @apply rounded-2xl border border-slate-200/70 bg-white shadow-card; }
+  .th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500; }
+  .td { @apply px-4 py-3 text-sm; }
+}
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp .35s ease both; }
+@keyframes scan { 0% { top: 0 } 50% { top: 100% } 100% { top: 0 } }
+.scan-line { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, #3b82f6, transparent); animation: scan 1.8s ease-in-out infinite; }
